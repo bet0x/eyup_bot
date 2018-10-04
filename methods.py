@@ -4,82 +4,65 @@ import psutil
 import config
 import persistence
 import time
-from persistence import Persistence
+# from persistence import Persistence
 
 last_notification = 0
-storage = Persistence()
+# storage = Persistence()
 
 
-def processMessage(message):
-    if "text" in message: processTextMessage(message)
+def processMessage(message, in_reply_to):
+    if message.startswith("/"): processCommandMessage(message, in_reply_to)
 
 
-def processTextMessage(message):
-    text = message["text"]
-    if text.startswith("/"): processCommandMessage(message)
-
-
-def processCommandMessage(message):
-    text = message["text"]
-    if " " in text:
-        command, parameter = text.split(" ", 1)
-    else:
-        command = text
-        parameter = ""
-
+def processCommandMessage(message, in_reply_to):
+    command = message
     if "@" in command:
         command, botname = command.split("@", 1)
         if botname.lower() != config.NAME.lower():
             # Ignore messages for other bots
             return
 
-    if command == "/start":
-        commandStart(message, parameter)
-    elif command == "/stop":
-        commandStop(message)
-    elif command == "/help":
-        commandHelp(message)
+    # if command == "/start":
+    #     commandStart(message, in_reply_to)
+    # elif command == "/stop":
+    #     commandStop(message, in_reply_to)
+    if command == "/help":
+        commandHelp(in_reply_to)
     elif command == "/usage":
-        commandUsage(message)
+        commandUsage(in_reply_to)
     elif command == "/users":
-        commandUsers(message)
+        commandUsers(in_reply_to)
     elif command == "/disks":
-        commandDisks(message)
+        commandDisks(in_reply_to)
     else:
-        sendTextMessage(message["chat"]["id"], "Sorry, no such command.")
+        sendTextMessage("Sorry, no such command.", in_reply_to)
 
 
 '''
 Send a text message to particular chat with given chat_id 
 '''
-def sendTextMessage(chat_id, text):
-    r = requests.post(config.API_URL + "sendMessage", 
-    # json={
-    #     "chat_id" : chat_id,
-    #     "text" : text
-    # })
-    json = {
-    "channel_id": "Test",
+def sendTextMessage(text, in_reply_to = None):
+
+    post_url = config.POSTS_API_URL
+    payload = {
+    "channel_id": config.CHANNEL_ID,
     "message": text,
-    "root_id": "string",
+    "root_id": in_reply_to,
     "file_ids": [],
     "props": ""
-    })
+    }
+    response = requests.request("POST", url, data=payload, headers=config.HEADERS)
 
-    result = r.json()
-    if not result["ok"]:
-        print(result)
+def sendAuthMessage():
+    sendTextMessage("Please sign in!")
 
-def sendAuthMessage(chat_id):
-    sendTextMessage(chat_id, "Please sign in!")
+# def startupMessage():
+#     for id in storage.allUsers():
+#         sendTextMessage(id, "Bot Started up")
 
-def startupMessage():
-    for id in storage.allUsers():
-        sendTextMessage(id, "Bot Started up")
-
-def shutdownMessage():
-    for id in storage.allUsers():
-        sendTextMessage(id, "Bot dead")
+# def shutdownMessage():
+#     for id in storage.allUsers():
+#         sendTextMessage(id, "Bot dead")
 
 
 '''
@@ -88,41 +71,38 @@ COMMANDS SECTION BEGIN
 Below are the list of commands to be executed
 '''
 
-def commandStart(message, parameter):
-    chat_id = message["chat"]["id"]
-    if storage.isRegisteredUser(chat_id):
-        sendTextMessage(chat_id, "Booting up bot")
-    else:
-        if parameter.strip() == config.PASSWORD:
-            storage.registerUser(chat_id)
-            sendTextMessage(chat_id, "Thank you. Type /help for options")
-        else:
-            sendTextMessage(chat_id, "Error logging in. Type /start <password> to start")
+# def commandStart(message, irt):
+#     sendTextMessage("Booting up bot")
+#     else:
+#         if parameter.strip() == config.PASSWORD:
+#             storage.registerUser(chat_id)
+#             sendTextMessage(chat_id, "Thank you. Type /help for options")
+#         else:
+#             sendTextMessage(chat_id, "Error logging in. Type /start <password> to start")
 
-def commandStop(message):
-    chat_id = message["chat"]["id"]
-    if storage.isRegisteredUser(chat_id):
-        storage.unregisterUser(chat_id)
-        sendTextMessage(chat_id, "Killing bot.")
-    else:
-        sendAuthMessage(chat_id)
+# def commandStop(message):
+#     chat_id = message["chat"]["id"]
+#     if storage.isRegisteredUser(chat_id):
+#         storage.unregisterUser(chat_id)
+#         sendTextMessage(chat_id, "Killing bot.")
+#     else:
+#         sendAuthMessage(chat_id)
 
-def commandHelp(message):
-    chat_id = message["chat"]["id"]
-    sendTextMessage(chat_id, config.NAME + """
+def commandHelp(irt):
+    # chat_id = message["chat"]["id"]
+    sendTextMessage(config.NAME + """
         Monitor status of server.
         /usage - View active usage
         /users - View users
-        /disks - View disk usage
-
-        /stop - Stop receiving notifications"""
+        /disks - View disk usage""", 
+        irt
     )
 
-def commandUsage(message):
-    chat_id = message["chat"]["id"]
-    if not storage.isRegisteredUser(chat_id):
-        sendAuthMessage(chat_id)
-        return
+def commandUsage(irt):
+    # chat_id = message["chat"]["id"]
+    # if not storage.isRegisteredUser(chat_id):
+        # sendAuthMessage(chat_id)
+        # return
 
     text = """Uptime: {0}
         CPU: {1} %
@@ -134,31 +114,31 @@ def commandUsage(message):
             psutil.swap_memory().percent
         )
 
-    sendTextMessage(chat_id, text)
+    sendTextMessage(text, irt)
 
-def commandUsers(message):
-    chat_id = message["chat"]["id"]
-    if not storage.isRegisteredUser(chat_id):
-        sendAuthMessage(chat_id)
-        return
+def commandUsers(irt):
+    # chat_id = message["chat"]["id"]
+    # if not storage.isRegisteredUser(chat_id):
+        # sendAuthMessage(chat_id)
+        # return
 
     text = ""
     for user in psutil.users():
         text = text + "{0}@{1} {2}\n".format(user.name, user.host, str(datetime.datetime.fromtimestamp(user.started)))
 
-    sendTextMessage(chat_id, text)
+    sendTextMessage(text, irt)
 
 def commandDisks(message):
-    chat_id = message["chat"]["id"]
-    if not storage.isRegisteredUser(chat_id):
-        sendAuthMessage(chat_id)
-        return
+    # chat_id = message["chat"]["id"]
+    # if not storage.isRegisteredUser(chat_id):
+    #     sendAuthMessage(chat_id)
+    #     return
 
     text = ""
     for dev in psutil.disk_partitions():
         text = text + "{0} ({1}) {2} %\n".format(dev.device, dev.mountpoint, psutil.disk_usage(dev.mountpoint).percent)
 
-    sendTextMessage(chat_id, text)
+    sendTextMessage(text, irt)
 
 '''
 COMMANDS SECTION END
@@ -185,5 +165,4 @@ def alarms():
 
         if should_send:
             last_notification = now
-            for id in storage.allUsers():
-                sendTextMessage(id, text)
+            sendTextMessage(text)
