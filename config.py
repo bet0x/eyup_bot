@@ -1,5 +1,5 @@
 # Mattermost details
-NAME = "eyuptime_bot"
+NAME = "eyup_bot"
 CHANNEL_ID = "qkmgmk13738txq8kwfdd5bj58e"
 USER_ID = ""
 POSTS_API_URL = "https://chat.eydean.com/api/v4/posts"
@@ -9,7 +9,7 @@ HEADERS = {
             'Content-Type': "application/json"
             }
 
-TIMEOUT = 60 * 5
+TIMEOUT = 1
 ENABLE_NOTIFICATIONS = True
 NOTIFCATION_INTERVAL = 60
 NOTIFY_CPU_PERCENT = 50
