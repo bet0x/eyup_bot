@@ -1,7 +1,7 @@
 import requests
 import config
 import methods
-import atexit
+# import atexit
 import time
 
 last_update_id = None
@@ -42,7 +42,7 @@ while True:
 
                 # Process post content. ProcessMessage(message, root_id)
                 methods.processMessage(result["posts"][last_update_id]['message'], last_update_id)
-        
+
         # Sleep for specified time
         time.sleep(config.TIMEOUT)
 

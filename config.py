@@ -1,11 +1,11 @@
 # Mattermost details
 NAME = "eyup_bot"
-CHANNEL_ID = "qkmgmk13738txq8kwfdd5bj58e"
+CHANNEL_ID = ""
 USER_ID = ""
 POSTS_API_URL = "https://chat.eydean.com/api/v4/posts"
 UPDATES_API_URL =  "https://chat.eydean.com/api/v4/channels/"+CHANNEL_ID+"/posts" 
 HEADERS = {
-            'Authorization': "Bearer jkpgwypn47bstq6ye18hkmp9zw",
+            'Authorization': "Bearer ",
             'Content-Type': "application/json"
             }
 
